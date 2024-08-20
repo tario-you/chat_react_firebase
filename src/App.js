@@ -1,11 +1,10 @@
 import './App.css';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, query, orderBy, limit, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, addDoc, serverTimestamp, limit } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
-import React from 'react';
-import { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 initializeApp({
 	apiKey: process.env.REACT_APP_API_KEY,
@@ -19,6 +18,7 @@ initializeApp({
 
 const auth = getAuth();
 const firestore = getFirestore();
+// const [isOpen, setOpen] = useState(false);
 
 function App() {
 	const [user] = useAuthState(auth);
@@ -55,6 +55,19 @@ function ChatRoom() {
 
 	const [formValue, setFormValue] = useState('');
 
+	// useEffect(() => {
+	// 	dummy.current?.scrollIntoView({ behavior: 'smooth' }, [messages]);
+	// });
+	useEffect(() => {
+		if (dummy.current) {
+			// Ensure the scroll is set to the bottom after the container is rendered
+			dummy.current.scrollIntoView({
+				bottom: dummy.current.scrollHeight,
+				behavior: 'smooth',
+			});
+		}
+	}, [messages]);
+
 	const sendMessage = async e => {
 		e.preventDefault();
 		const sentText = formValue;
@@ -71,7 +84,7 @@ function ChatRoom() {
 				displayName,
 			});
 		}
-		dummy.current.scrollIntoView({ behavior: 'smooth' });
+		// dummy.current.scrollIntoView({ behavior: 'smooth' });
 	};
 
 	return (
@@ -90,20 +103,74 @@ function ChatRoom() {
 	);
 }
 
+function getTimeStamp(createdAt) {
+	if (!createdAt) return '';
+
+	const date = createdAt.toDate();
+	const now = new Date();
+
+	// Check if the message was created today
+	const isToday = date.toDateString() === now.toDateString();
+
+	// Check if the message was created this year
+	const isThisYear = date.getFullYear() === now.getFullYear();
+
+	// Get time, date, and year components
+	const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+	const dayMonth = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+	const year = date.getFullYear();
+
+	// Determine what to display
+	if (isToday) {
+		return time;
+	} else if (isThisYear) {
+		return `${dayMonth}, ${time}`;
+	} else {
+		return `${dayMonth} ${year}, ${time}`;
+	}
+}
+
 function ChatMessage(props) {
-	const { text, uid, photoURL, displayName } = props.message;
+	const { text, uid, photoURL, displayName, createdAt } = props.message;
 
 	const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
 
+	const timestamp = getTimeStamp(createdAt);
+
 	return (
-		<div className={`message ${messageClass}`}>
-			<img src={photoURL} />
+		<div className='chat-message'>
+			<button class='photo-btn' onclick={() => handleProfileClick(uid, photoURL, displayName, text)}>
+				<img src={photoURL} />
+			</button>
 			<div>
-				<span className='display-name'>{displayName}</span>
+				<div className='message-header'>
+					<button class='name-btn'>
+						<span className='display-name' onclick={() => handleProfileClick(uid, photoURL, displayName, text)}>
+							{displayName}
+						</span>
+					</button>
+					<small className='timestamp'>{timestamp}</small>
+				</div>
 				<p>{text}</p>
 			</div>
 		</div>
 	);
+}
+
+function handleProfileClick(uid, photoURL, displayName, message) {
+	// 	// setOpen(!isOpen);
+	// 	// if (!isOpen) return null;
+	// 	// return (
+	// 	// 	<div className='modal-overlay' onClick={handleProfileClick()}>
+	// 	// 		<div className='modal-content' onClick={e => e.stopPropagation()}>
+	// 	// 			<button className='modal-close' onClick={handleProfileClick()}>
+	// 	// 				X
+	// 	// 			</button>
+	// 	// 			<img src={photoURL} />
+	// 	// 			<span>{displayName}</span>
+	// 	// 		</div>
+	// 	// 	</div>
+	// 	// );
 }
 
 export default App;
