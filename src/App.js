@@ -1,7 +1,17 @@
 import './App.css';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, query, orderBy, addDoc, serverTimestamp, limit } from 'firebase/firestore';
+import {
+	getFirestore,
+	collection,
+	query,
+	orderBy,
+	addDoc,
+	serverTimestamp,
+	limit,
+	doc,
+	setDoc,
+} from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
 import React, { useState, useRef, useEffect } from 'react';
