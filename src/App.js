@@ -5,6 +5,7 @@ import { getFirestore, collection, query, orderBy, addDoc, serverTimestamp, limi
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
 import React, { useState, useRef, useEffect } from 'react';
+import Popup from 'reactjs-popup';
 
 initializeApp({
 	apiKey: process.env.REACT_APP_API_KEY,
@@ -22,13 +23,35 @@ const firestore = getFirestore();
 
 function App() {
 	const [user] = useAuthState(auth);
-	console.log(process.env.API_KEY);
+	const [isOpen, setIsOpen] = useState(false);
+	const [selectedDisplayName, setSelectedDisplayName] = useState('');
+	const [selectedPhotoURL, setSelectedPhotoURL] = useState('');
+
+	const openProfilePopup = (displayName, photoURL) => {
+		setSelectedDisplayName(displayName);
+		setSelectedPhotoURL(photoURL);
+		setIsOpen(true);
+	};
+
 	return (
 		<div className='App'>
 			<header className='App-header'>
 				<SignOut />
 			</header>
-			<section>{user ? <ChatRoom /> : <SignIn />}</section>
+			<section>
+				{user ? <ChatRoom openProfilePopup={openProfilePopup} /> : <SignIn />}
+				<Popup open={isOpen} onClose={() => setIsOpen(false)} modal>
+					<div className='profileBackground'>
+						<h2>{selectedDisplayName}</h2>
+						<img
+							src={selectedPhotoURL}
+							alt={`${selectedDisplayName}'s profile`}
+							style={{ width: '100px', height: '100px', borderRadius: '50%' }}
+						/>
+						{/* <button onClick={() => setIsOpen(false)}>Close</button> // cl */}
+					</div>
+				</Popup>
+			</section>
 		</div>
 	);
 }
@@ -45,7 +68,7 @@ function SignOut() {
 	return auth.currentUser && <button onClick={() => signOut(auth)}>Sign Out</button>;
 }
 
-function ChatRoom() {
+function ChatRoom({ openProfilePopup }) {
 	const dummy = useRef();
 
 	const messagesRef = collection(firestore, 'messages');
@@ -91,7 +114,7 @@ function ChatRoom() {
 		<div className='chat-container'>
 			<main>
 				{messages?.map((message, index) => (
-					<ChatMessage message={message} key={index} />
+					<ChatMessage message={message} key={index} openProfilePopup={openProfilePopup} />
 				))}
 				<div ref={dummy}></div>
 			</main>
@@ -130,8 +153,16 @@ function getTimeStamp(createdAt) {
 	}
 }
 
-function ChatMessage(props) {
-	const { text, uid, photoURL, displayName, createdAt } = props.message;
+function ChatMessage({ message, openProfilePopup }) {
+	const { text, uid, photoURL, displayName, createdAt } = message;
+
+	// setSelectedDisplayName(displayName);
+	// setSelectedPhotoURL(photoURL);
+
+	// if (!message || !handleProfileClick) {
+	// 	console.error('Required props are missing in ChatMessage component');
+	// 	return null;
+	// }
 
 	const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
 
@@ -139,15 +170,13 @@ function ChatMessage(props) {
 
 	return (
 		<div className='chat-message'>
-			<button class='photo-btn' onclick={() => handleProfileClick(uid, photoURL, displayName, text)}>
+			<button className='photo-btn' onClick={() => openProfilePopup(displayName, photoURL)}>
 				<img src={photoURL} />
 			</button>
 			<div>
 				<div className='message-header'>
-					<button class='name-btn'>
-						<span className='display-name' onclick={() => handleProfileClick(uid, photoURL, displayName, text)}>
-							{displayName}
-						</span>
+					<button className='name-btn' onClick={() => openProfilePopup(displayName, photoURL)}>
+						<span className='display-name'>{displayName}</span>
 					</button>
 					<small className='timestamp'>{timestamp}</small>
 				</div>
@@ -155,22 +184,6 @@ function ChatMessage(props) {
 			</div>
 		</div>
 	);
-}
-
-function handleProfileClick(uid, photoURL, displayName, message) {
-	// 	// setOpen(!isOpen);
-	// 	// if (!isOpen) return null;
-	// 	// return (
-	// 	// 	<div className='modal-overlay' onClick={handleProfileClick()}>
-	// 	// 		<div className='modal-content' onClick={e => e.stopPropagation()}>
-	// 	// 			<button className='modal-close' onClick={handleProfileClick()}>
-	// 	// 				X
-	// 	// 			</button>
-	// 	// 			<img src={photoURL} />
-	// 	// 			<span>{displayName}</span>
-	// 	// 		</div>
-	// 	// 	</div>
-	// 	// );
 }
 
 export default App;
